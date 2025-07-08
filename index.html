@@ -1,16 +1,146 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Based64 - The Ultimate Base64 Encoder/Decoder</title>
 
-<head>
-  <meta charset="UTF-8" />
-  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Based</title>
-</head>
+    <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/persist@3.x.x/dist/cdn.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
-<body>
-  <div id="root"></div>
-  <script type="module" src="/src/main.tsx"></script>
-</body>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+    <style>
+      #history table {
+        table-layout: fixed;
+        width: 100%;
+      }
 
+      #history th:first-child,
+      #history td:first-child {
+        width: 50%;
+      }
+
+      #history th:last-child,
+      #history td:last-child {
+        width: 50%;
+      }
+
+      #history td {
+        cursor: pointer;
+        word-break: break-all;
+      }
+
+      #encoder input,
+      #encoder fieldset {
+        margin-bottom: 0;
+      }
+
+      #history header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+    </style>
+  </head>
+
+  <body x-data="{history: $persist([])}">
+    <header class="container-fluid">
+      <nav>
+        <ul>
+          <li>
+            <strong>Based64</strong>
+          </li>
+        </ul>
+        <ul>
+          <li>
+            <a href="#">About</a>
+          </li>
+        </ul>
+      </nav>
+    </header>
+    <main class="container-fluid">
+      <article id="encoder" class="grid" x-data="encoder">
+        <form @submit.prevent="submit(true)">
+          <fieldset>
+            <label>
+              Encoder
+              <input placeholder="Encode text..." x-model="decoded" />
+            </label>
+          </fieldset>
+        </form>
+        <form @submit.prevent="submit(false)">
+          <fieldset>
+            <label>
+              Decoder
+              <input placeholder="Decode text..." x-model="encoded" />
+            </label>
+          </fieldset>
+        </form>
+        <script>
+          document.addEventListener('alpine:init', () => {
+            Alpine.data('encoder', () => ({
+              decoded: '',
+              encoded: '',
+              submit(encode = true) {
+                if (encode) {
+                  this.history.unshift({
+                    decoded: this.decoded,
+                    encoded: btoa(this.decoded),
+                  });
+                } else {
+                  this.history.unshift({
+                    decoded: atob(this.encoded),
+                    encoded: this.encoded,
+                  });
+                }
+
+                this.decoded = '';
+                this.encoded = '';
+              },
+            }));
+          });
+        </script>
+      </article>
+      <section id="history">
+        <header>
+          <h6>History</h6>
+          <a href="" @click="history = []">Clear History</a>
+        </header>
+        <table>
+          <thead>
+            <tr>
+              <th>Plain</th>
+              <th>Base64</th>
+            </tr>
+          </thead>
+          <tbody>
+            <template x-for="item in history" x-data="rows">
+              <tr>
+                <td x-text="item.decoded" @click="highlight"></td>
+                <td x-text="item.encoded" @click="highlight"></td>
+              </tr>
+            </template>
+            <script>
+              document.addEventListener('alpine:init', () => {
+                Alpine.data('rows', () => ({
+                  highlight() {
+                    // Create a new Range object
+                    var range = document.createRange();
+                    // Select all the contents of the given element
+                    range.selectNodeContents(this.$el);
+                    // Get the current window's selection object
+                    var selection = window.getSelection();
+                    // Remove any existing selections
+                    selection.removeAllRanges();
+                    // Add the new range to the selection
+                    selection.addRange(range);
+                  },
+                }));
+              });
+            </script>
+          </tbody>
+        </table>
+      </section>
+    </main>
+  </body>
 </html>
