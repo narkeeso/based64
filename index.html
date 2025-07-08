@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Based64 - The Ultimate Base64 Encoder/Decoder</title>
+    <title>Based64 - Efficient Encoder/Decoder Workflows</title>
 
     <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/persist@3.x.x/dist/cdn.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
@@ -43,7 +43,8 @@
     </style>
   </head>
 
-  <body x-data="{history: $persist([])}">
+  <body
+    x-data="{history: $persist([{decoded: 'hello world', encoded: 'aGVsbG8gd29ybGQ='}]), settings: $persist({ autoCopy: false }) }">
     <header class="container-fluid">
       <nav>
         <ul>
@@ -53,45 +54,71 @@
         </ul>
         <ul>
           <li>
-            <a href="#">About</a>
+            <a href="https://github.com/narkeeso/based64">GitHub</a>
           </li>
         </ul>
       </nav>
     </header>
     <main class="container-fluid">
-      <article id="encoder" class="grid" x-data="encoder">
-        <form @submit.prevent="submit(true)">
+      <article id="encoder" x-data="encoder">
+        <section class="grid">
+          <form @submit.prevent="submit(true)">
+            <fieldset>
+              <label>
+                Encoder
+                <input placeholder="Encode text..." x-model="decoded" />
+              </label>
+            </fieldset>
+          </form>
+          <form @submit.prevent="submit(false)">
+            <fieldset>
+              <label>
+                Decoder
+                <input placeholder="Decode text..." x-model="encoded" />
+              </label>
+            </fieldset>
+          </form>
+        </section>
+        <footer>
           <fieldset>
-            <label>
-              Encoder
-              <input placeholder="Encode text..." x-model="decoded" />
-            </label>
+            <label
+              ><input type="checkbox" role="switch" x-model="settings.autoCopy" @click="toggleCopy" /> Copy on
+              Convert</label
+            >
           </fieldset>
-        </form>
-        <form @submit.prevent="submit(false)">
-          <fieldset>
-            <label>
-              Decoder
-              <input placeholder="Decode text..." x-model="encoded" />
-            </label>
-          </fieldset>
-        </form>
+        </footer>
         <script>
           document.addEventListener('alpine:init', () => {
             Alpine.data('encoder', () => ({
               decoded: '',
               encoded: '',
+              async toggleCopy() {
+                const autoCopy = this.settings.autoCopy;
+                try {
+                  await navigator.clipboard.readText();
+                  this.settings.autoCopy = !autoCopy;
+                } catch (err) {
+                  this.settings.autoCopy = false;
+                  console.error(err);
+                }
+              },
               submit(encode = true) {
                 if (encode) {
                   this.history.unshift({
                     decoded: this.decoded,
                     encoded: btoa(this.decoded),
                   });
+                  if (this.settings.autoCopy) {
+                    navigator.clipboard.writeText(btoa(this.decoded));
+                  }
                 } else {
                   this.history.unshift({
                     decoded: atob(this.encoded),
                     encoded: this.encoded,
                   });
+                  if (this.settings.autoCopy) {
+                    navigator.clipboard.writeText(atob(this.encoded));
+                  }
                 }
 
                 this.decoded = '';
@@ -116,8 +143,12 @@
           <tbody>
             <template x-for="item in history" x-data="rows">
               <tr>
-                <td x-text="item.decoded" @click="highlight"></td>
-                <td x-text="item.encoded" @click="highlight"></td>
+                <td @click="highlight">
+                  <span x-text="item.decoded"></span>
+                </td>
+                <td @click="highlight">
+                  <span x-text="item.encoded"></span>
+                </td>
               </tr>
             </template>
             <script>
@@ -142,5 +173,15 @@
         </table>
       </section>
     </main>
+    <hr />
+    <footer class="container-fluid">
+      <h6>About</h6>
+      <p style="max-width: 500px">
+        <small>
+          Based64 is an efficient client-side base64 encoder/decoder that stores a history of your conversions locally,
+          eliminating the need to re-enter text for frequent encoding and decoding tasks.
+        </small>
+      </p>
+    </footer>
   </body>
 </html>
