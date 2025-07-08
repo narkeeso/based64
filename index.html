@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Based64 - Efficient Encoder/Decoder Workflows</title>
+    <title>Based(64) - Efficient Encoder/Decoder Workflows</title>
 
     <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/persist@3.x.x/dist/cdn.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
@@ -23,6 +23,10 @@
       #history th:last-child,
       #history td:last-child {
         width: 50%;
+      }
+
+      #history {
+        min-height: 100vh;
       }
 
       #history td {
@@ -49,7 +53,7 @@
       <nav>
         <ul>
           <li>
-            <strong>Based64</strong>
+            <strong>Based(64)</strong>
           </li>
         </ul>
         <ul>
@@ -108,6 +112,7 @@
                     decoded: this.decoded,
                     encoded: btoa(this.decoded),
                   });
+
                   if (this.settings.autoCopy) {
                     navigator.clipboard.writeText(btoa(this.decoded));
                   }
@@ -116,9 +121,15 @@
                     decoded: atob(this.encoded),
                     encoded: this.encoded,
                   });
+
                   if (this.settings.autoCopy) {
                     navigator.clipboard.writeText(atob(this.encoded));
                   }
+                }
+
+                // TODO: Make this configurable
+                if (this.history.length > 250) {
+                  this.history.pop();
                 }
 
                 this.decoded = '';
