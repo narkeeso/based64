@@ -68,20 +68,10 @@
         <article>
           <div class="grid">
             <form @submit.prevent="submit(true)">
-              <fieldset>
-                <label>
-                  Encoder
-                  <input placeholder="Encode text..." x-model="decoded" />
-                </label>
-              </fieldset>
+              <input placeholder="Encode..." x-model="decoded" />
             </form>
             <form @submit.prevent="submit(false)">
-              <fieldset>
-                <label>
-                  Decoder
-                  <input placeholder="Decode text..." x-model="encoded" />
-                </label>
-              </fieldset>
+              <input placeholder="Decode..." x-model="encoded" />
             </form>
           </div>
           <footer>
