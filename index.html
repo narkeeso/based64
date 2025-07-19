@@ -64,6 +64,57 @@
       </nav>
     </header>
     <main class="container-fluid">
+      <script>
+        document.addEventListener('alpine:init', () => {
+          Alpine.data('encoder', () => ({
+            decoded: '',
+            encoded: '',
+            async toggleCopy() {
+              const autoCopy = this.settings.autoCopy;
+              try {
+                await navigator.clipboard.readText();
+                this.settings.autoCopy = !autoCopy;
+              } catch (err) {
+                this.settings.autoCopy = false;
+                console.error(err);
+              }
+            },
+            submit(encode = true) {
+              // Prevent empty inputs
+              if (!this.decoded && !this.encoded) return;
+
+              if (encode) {
+                this.history.unshift({
+                  decoded: this.decoded,
+                  encoded: btoa(this.decoded),
+                });
+
+                if (this.settings.autoCopy) {
+                  navigator.clipboard.writeText(btoa(this.decoded));
+                }
+              } else {
+                this.history.unshift({
+                  decoded: atob(this.encoded),
+                  encoded: this.encoded,
+                });
+
+                if (this.settings.autoCopy) {
+                  navigator.clipboard.writeText(atob(this.encoded));
+                }
+              }
+
+              // TODO: Make this configurable
+              if (this.history.length > 250) {
+                this.history.pop();
+              }
+
+              // Reset input fields
+              this.decoded = '';
+              this.encoded = '';
+            },
+          }));
+        });
+      </script>
       <section id="encoder" x-data="encoder">
         <article>
           <div class="grid">
@@ -82,53 +133,6 @@
               >
             </fieldset>
           </footer>
-          <script>
-            document.addEventListener('alpine:init', () => {
-              Alpine.data('encoder', () => ({
-                decoded: '',
-                encoded: '',
-                async toggleCopy() {
-                  const autoCopy = this.settings.autoCopy;
-                  try {
-                    await navigator.clipboard.readText();
-                    this.settings.autoCopy = !autoCopy;
-                  } catch (err) {
-                    this.settings.autoCopy = false;
-                    console.error(err);
-                  }
-                },
-                submit(encode = true) {
-                  if (encode) {
-                    this.history.unshift({
-                      decoded: this.decoded,
-                      encoded: btoa(this.decoded),
-                    });
-
-                    if (this.settings.autoCopy) {
-                      navigator.clipboard.writeText(btoa(this.decoded));
-                    }
-                  } else {
-                    this.history.unshift({
-                      decoded: atob(this.encoded),
-                      encoded: this.encoded,
-                    });
-
-                    if (this.settings.autoCopy) {
-                      navigator.clipboard.writeText(atob(this.encoded));
-                    }
-                  }
-
-                  // TODO: Make this configurable
-                  if (this.history.length > 250) {
-                    this.history.pop();
-                  }
-
-                  this.decoded = '';
-                  this.encoded = '';
-                },
-              }));
-            });
-          </script>
         </article>
       </section>
       <section id="history">
@@ -159,11 +163,11 @@
                 Alpine.data('rows', () => ({
                   highlight() {
                     // Create a new Range object
-                    var range = document.createRange();
+                    const range = document.createRange();
                     // Select all the contents of the given element
                     range.selectNodeContents(this.$el);
                     // Get the current window's selection object
-                    var selection = window.getSelection();
+                    const selection = window.getSelection();
                     // Remove any existing selections
                     selection.removeAllRanges();
                     // Add the new range to the selection
