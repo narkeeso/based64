@@ -1,13 +1,13 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Based(64) - Efficient Encoder/Decoder Workflows</title>
-
+    <!-- Alpine Plugins -->
     <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/persist@3.x.x/dist/cdn.min.js"></script>
+    <!-- Alpine Core -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
     <style>
       #history table {
@@ -46,9 +46,7 @@
       }
     </style>
   </head>
-
-  <body
-    x-data="{history: $persist([{decoded: 'hello world', encoded: 'aGVsbG8gd29ybGQ='}]), settings: $persist({ autoCopy: false }) }">
+  <body>
     <header class="container-fluid">
       <nav>
         <ul>
@@ -63,59 +61,66 @@
         </ul>
       </nav>
     </header>
-    <main class="container-fluid">
+    <main class="container-fluid" x-data="encoder">
       <script>
         document.addEventListener('alpine:init', () => {
           Alpine.data('encoder', () => ({
             decoded: '',
             encoded: '',
-            async toggleCopy() {
-              const autoCopy = this.settings.autoCopy;
-              try {
-                await navigator.clipboard.readText();
-                this.settings.autoCopy = !autoCopy;
-              } catch (err) {
-                this.settings.autoCopy = false;
-                console.error(err);
-              }
-            },
+            urlsafeMode: Alpine.$persist(false),
+            history: Alpine.$persist([]),
+
             submit(encode = true) {
               // Prevent empty inputs
               if (!this.decoded && !this.encoded) return;
 
-              if (encode) {
-                this.history.unshift({
-                  decoded: this.decoded,
-                  encoded: btoa(this.decoded),
-                });
+              const history = this.history;
 
-                if (this.settings.autoCopy) {
-                  navigator.clipboard.writeText(btoa(this.decoded));
-                }
+              const urlEncode = str => {
+                // Convert to Base64
+                const base64 = btoa(str);
+                // Make URL-safe: replace + with -, / with _, and remove padding =
+                return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+              };
+
+              const urlDecode = str => {
+                // Add padding back
+                str += '='.repeat((4 - (str.length % 4)) % 4);
+                // Reverse URL-safe replacements: - with +, _ with /
+                str = str.replace(/\-/g, '+').replace(/_/g, '/');
+                // Decode from Base64
+                return atob(str);
+              };
+
+              if (encode) {
+                history.unshift({
+                  decoded: this.decoded,
+                  encoded: this.urlsafeMode ? urlEncode(this.decoded) : btoa(this.decoded),
+                });
               } else {
-                this.history.unshift({
-                  decoded: atob(this.encoded),
+                history.unshift({
+                  decoded: this.urlsafeMode ? urlDecode(this.encoded) : atob(this.encoded),
                   encoded: this.encoded,
                 });
-
-                if (this.settings.autoCopy) {
-                  navigator.clipboard.writeText(atob(this.encoded));
-                }
               }
 
               // TODO: Make this configurable
-              if (this.history.length > 250) {
-                this.history.pop();
+              if (history.length > 1000) {
+                history.pop();
               }
 
               // Reset input fields
               this.decoded = '';
               this.encoded = '';
             },
+
+            clear() {
+              this.history = [];
+            },
           }));
         });
       </script>
-      <section id="encoder" x-data="encoder">
+      <section id="encoder">
         <article>
           <div class="grid">
             <form @submit.prevent="submit(true)">
@@ -127,10 +132,10 @@
           </div>
           <footer>
             <fieldset>
-              <label style="margin-bottom: 0"
-                ><input type="checkbox" role="switch" x-model="settings.autoCopy" @click="toggleCopy" /> Copy on
-                Convert</label
-              >
+              <label style="margin-bottom: 0">
+                <input type="checkbox" role="switch" x-model="urlsafeMode" />
+                URL Safe
+              </label>
             </fieldset>
           </footer>
         </article>
@@ -138,7 +143,7 @@
       <section id="history">
         <header>
           <h6>History</h6>
-          <a href="" @click="history = []">Clear History</a>
+          <a @click="clear">Clear History</a>
         </header>
         <table>
           <thead>
